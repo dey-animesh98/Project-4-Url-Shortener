@@ -19,9 +19,9 @@ redisClient.on("connect", async function () {
 //Connection setup for redis
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
-const SETEX_ASYNC = promisify(redisClient.SETEX).bind(redisClient)
-const GETEX_ASYNC = promisify(redisClient.GETEX).bind(redisClient);
-const DEFAULT_EXPIRATION = 24*60*60  //In seconds
+// const SETEX_ASYNC = promisify(redisClient.SETEX).bind(redisClient)
+// const GETEX_ASYNC = promisify(redisClient.GETEX).bind(redisClient);
+// const DEFAULT_EXPIRATION = 24*60*60  //In seconds
 
 //---------------------------Valiadtions-----------------------------------------//
 //request body validation
@@ -32,7 +32,6 @@ const isValidRequest = function (request) {
 const isValidValue = function (value) {
     if (typeof value === 'undefined' || value === null) return false
     if (typeof value === 'string' && value.trim().length === 0) return false
-    if (typeof value === 'number' && value.toString().trim().length === 0) return false
     return true
 }
 //---------------------------------------------------Shorten Url API-----------------------------------------------------------------//
@@ -69,7 +68,7 @@ const shortenUrl = async (req, res) => {
 
         //Set cache the newly created url
         if (generateUrl) {
-            await SETEX_ASYNC(`${longUrl}`, DEFAULT_EXPIRATION, JSON.stringify(generateUrl))
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(generateUrl))
         }
         await urlModel.create(generateUrl)
         return res.status(201).send({ status: true, message: "Short url Successfully created", data: generateUrl })
@@ -92,7 +91,7 @@ const getUrl = async (req, res) => {
         const findUrlcode = await urlModel.findOne({ urlCode })
         if (!findUrlcode) return res.status(404).send({ status: false, message: "URL code not found" })
 
-        await SETEX_ASYNC(`${urlCode}`,DEFAULT_EXPIRATION, JSON.stringify(findUrlcode))
+        await SET_ASYNC(`${urlCode}`,JSON.stringify(findUrlcode))
         return res.status(302).redirect(findUrlcode.longUrl)
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message })
