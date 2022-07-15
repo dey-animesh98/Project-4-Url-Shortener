@@ -1,15 +1,13 @@
 const express = require('express')
-// const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 const app = express()
-const port = 3000
+const port = process.env.PORT || 3000
 const route = require('./routes');
 
 app.use(express.json())
-// app.use(bodyParser.json())
-// app.use(bodyParser.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true }))
 
-mongoose.connect("mongodb+srv://animesh-dey98:9I9JRLwql3bINqUX@cluster0.vhmqo.mongodb.net/project-urlShortener", {
+mongoose.connect("mongodb+srv://animesh-dey98:Ir7ZHtxfwy24NFBc@cluster0.i6wv1.mongodb.net/urlShortener", {
     useNewUrlParser: true
 })
 
@@ -19,6 +17,6 @@ mongoose.connect("mongodb+srv://animesh-dey98:9I9JRLwql3bINqUX@cluster0.vhmqo.mo
 app.use('/', route);
 
 
-app.listen(process.env.PORT || port, function () {
-    console.log("Express app is running on port", process.env.PORT || port)
+app.listen(port, function () {
+    console.log(`Express app is running on port ${process.env.PORT || port}`)
 })

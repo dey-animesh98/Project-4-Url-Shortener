@@ -4,7 +4,7 @@ const shortid = require('shortid')
 const redis = require('redis')
 const { promisify } = require("util");
 
-
+/*
 //Connect to redis
 const redisClient = redis.createClient(
     19382, 
@@ -28,6 +28,8 @@ redisClient.on("error", async function (err) {
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 const SETEX_ASYNC = promisify(redisClient.SETEX).bind(redisClient)
 const DEFAULT_EXPIRATION = 60*60  //In seconds
+*/
+
 
 //---------------------------Valiadtions-----------------------------------------//
 //request body validation
