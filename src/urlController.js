@@ -7,11 +7,11 @@ const { promisify } = require("util");
 
 //Connect to redis
 const redisClient = redis.createClient(
-    12507, 
-    "redis-12507.c212.ap-south-1-1.ec2.cloud.redislabs.com", 
+    12507,
+    "redis-12507.c212.ap-south-1-1.ec2.cloud.redislabs.com",
     { no_ready_check: true });
 
-    redisClient.auth("9rnzcUHwyTiFHXdtehUSNNYFMfRGcCGJ", function (err) {
+redisClient.auth("9rnzcUHwyTiFHXdtehUSNNYFMfRGcCGJ", function (err) {
     if (err) throw err;
 });
 
@@ -27,7 +27,7 @@ redisClient.on("error", async function (err) {
 //Connection setup for redis
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 const SETEX_ASYNC = promisify(redisClient.SETEX).bind(redisClient)
-const DEFAULT_EXPIRATION = 60*60  //In seconds
+const DEFAULT_EXPIRATION = 60   //In seconds
 
 
 //---------------------------Valiadtions-----------------------------------------//
@@ -45,6 +45,7 @@ const isValidValue = function (value) {
 //---------------------------------------------------Shorten Url API-----------------------------------------------------------------//
 const shortenUrl = async (req, res) => {
     try {
+        res.setHeader('Access-Control-Allow-Origin', '*')
         if (!isValidRequest(req.body)) return res.status(400).send({ status: false, message: "No input by user" })
         if (!isValidValue(req.body.longUrl)) return res.status(400).send({ status: false, message: "longUrl is required." })
 
@@ -54,17 +55,20 @@ const shortenUrl = async (req, res) => {
         const cachedLongUrl = await GET_ASYNC(`${longUrl}`)
         if (cachedLongUrl) {
             const parseLongUrl = JSON.parse(cachedLongUrl)
-            return res.status(201).send({ status: true, message: "Shorten link already generated previously (from cache)", data: parseLongUrl })
+            return res.render('main', { url: parseLongUrl.shortUrl })
+            // res.status(201).send({ status: true, message: "Shorten link already generated previously (from cache)", data: parseLongUrl })
         }
 
         // If longurl present in db but not in cache
         const usedLongUrl = await urlModel.findOne({ longUrl }).select({ _id: 0, createdAt: 0, updatedAt: 0, __v: 0 })
-        if (usedLongUrl) return res.status(201).send({ status: true, message: "Shorten link already generated previously (from db).", data: usedLongUrl })
+        if (usedLongUrl) return res.render('main', { url: usedLongUrl.shortUrl })
+        // res.status(201).send({ status: true, message: "Shorten link already generated previously (from db).", data: usedLongUrl })
 
         //Url Validations
 
         const checkDot = longUrl.split('//')
-        if (!validUrl.isWebUri(longUrl) || !checkDot[1].includes('.')) return res.status(400).send({ status: false, message: "Long Url is invalid." })
+        if (!validUrl.isWebUri(longUrl) || !checkDot[1].includes('.')) return res.status(400).render('error', { Error: "Long Url is invalid" })
+        // res.status(400).send({ status: false, message: "Long Url is invalid." })
 
         // Base Url
         const baseUrl = "http://localhost:3000/"
@@ -83,8 +87,12 @@ const shortenUrl = async (req, res) => {
         if (generateUrl) {
             await SETEX_ASYNC(`${longUrl}`, DEFAULT_EXPIRATION, JSON.stringify(generateUrl))
         }
-        await urlModel.create(generateUrl)
-        return res.status(201).send({ status: true, message: "Short url Successfully created", data: generateUrl })
+        let data = await urlModel.create(generateUrl)
+
+
+        return res.render('main', { url: data.shortUrl })
+        // return res.redirect('form.html')
+        // return res.status(201).send({ status: true, message: "Short url Successfully created", data: generateUrl })
     } catch (err) {
         return res.status(500).send({ status: false, message: err.message })
     }
